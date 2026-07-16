@@ -1,32 +1,53 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {
+  trigger,
+  transition,
+  style,
+  animate,
+  query,
+  stagger,
+} from '@angular/animations';
 import { ApiService } from '../../../../core/services/api.service';
 import { Profile } from '../../../../core/models/profile.model';
 import { SocialLink } from '../../../../core/models/social-link.model';
 import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
-import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-on-scroll.directive';
+import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
+import { AssetUrlPipe } from '../../../../shared/pipes/asset-url.pipe';
 
 @Component({
   selector: 'app-hero',
   standalone: true,
-  imports: [CommonModule, AnimateOnScrollDirective],
+  imports: [CommonModule, SkeletonComponent, AssetUrlPipe],
+  animations: [
+    trigger('heroEntrance', [
+      transition(':enter', [
+        query('.hero__animate-item', [
+          style({ opacity: 0, transform: 'translateY(20px)' }),
+          stagger(150, [
+            animate('500ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+          ]),
+        ], { optional: true }),
+      ]),
+    ]),
+  ],
   template: `
     <section id="hero" class="hero section" aria-label="Introduction">
       <div class="container hero__container">
-        <div class="hero__content" appAnimateOnScroll>
-          @if (profile()) {
-            <p class="hero__greeting">Hello, I'm</p>
-            <h1 class="hero__name">{{ profile()!.full_name }}</h1>
-            <h2 class="hero__title">{{ profile()!.title }}</h2>
+        @if (profile()) {
+          <div class="hero__content" [@heroEntrance]>
+            <p class="hero__greeting hero__animate-item">Hello, I'm</p>
+            <h1 class="hero__name hero__animate-item">{{ profile()!.full_name }}</h1>
+            <h2 class="hero__title hero__animate-item">{{ profile()!.title }}</h2>
             @if (profile()!.tagline) {
-              <p class="hero__tagline">{{ profile()!.tagline }}</p>
+              <p class="hero__tagline hero__animate-item">{{ profile()!.tagline }}</p>
             }
-            <div class="hero__actions">
+            <div class="hero__actions hero__animate-item">
               <a href="#contact" class="hero__btn hero__btn--primary">Get In Touch</a>
               <a href="#projects" class="hero__btn hero__btn--secondary">View Projects</a>
             </div>
             @if (socialLinks().length) {
-              <div class="hero__social">
+              <div class="hero__social hero__animate-item">
                 @for (link of socialLinks(); track link.id) {
                   <a
                     [href]="link.url"
@@ -35,20 +56,30 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
                     class="hero__social-link"
                     [attr.aria-label]="link.platform"
                   >
-                    <img [src]="link.icon" [alt]="link.platform" width="20" height="20" />
+                    <img [src]="link.icon | assetUrl" [alt]="link.platform" width="20" height="20" (error)="$any($event.target).style.display='none'" />
                   </a>
                 }
               </div>
             }
-          }
-        </div>
-        <div class="hero__visual" appAnimateOnScroll animationDelay="200ms">
-          @if (profile()?.avatar_url) {
-            <div class="hero__avatar-wrapper">
-              <img [src]="profile()!.avatar_url" [alt]="profile()!.full_name" class="hero__avatar" />
-            </div>
-          }
-        </div>
+          </div>
+          <div class="hero__visual">
+            @if (profile()?.avatar_url) {
+              <div class="hero__avatar-wrapper hero__animate-item">
+                <img [src]="profile()!.avatar_url" [alt]="profile()!.full_name" class="hero__avatar" />
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="hero__content">
+            <app-skeleton variant="line" width="120px" height="20px" />
+            <app-skeleton variant="line" width="320px" height="48px" />
+            <app-skeleton variant="line" width="260px" height="32px" />
+            <app-skeleton variant="line" width="200px" height="20px" />
+          </div>
+          <div class="hero__visual">
+            <app-skeleton variant="circle" width="300px" height="300px" />
+          </div>
+        }
       </div>
       <div class="hero__scroll-indicator" aria-hidden="true">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -78,15 +109,14 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
       font-size: var(--text-lg);
       color: var(--color-accent);
       font-weight: 600;
-      margin-bottom: var(--space-2);
+      margin-bottom: var(--space-3);
     }
 
     .hero__name {
       font-size: var(--text-4xl);
       font-weight: 800;
-      color: var(--text-primary);
-      margin-bottom: var(--space-2);
-      letter-spacing: -0.02em;
+      margin-bottom: var(--space-3);
+      line-height: var(--leading-tight);
     }
 
     .hero__title {
@@ -100,8 +130,8 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
       font-size: var(--text-lg);
       color: var(--text-tertiary);
       line-height: var(--leading-relaxed);
-      max-width: 500px;
       margin-bottom: var(--space-8);
+      max-width: 500px;
     }
 
     .hero__actions {
@@ -115,32 +145,29 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
       align-items: center;
       padding: var(--space-3) var(--space-6);
       font-weight: 600;
-      font-size: var(--text-sm);
-      border-radius: var(--radius-full);
-      text-decoration: none;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+      font-size: var(--text-base);
+      border-radius: var(--radius-md);
+      transition: transform var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
     }
 
-    .hero__btn:hover {
-      transform: translateY(-2px);
+    .hero__btn:active {
+      transform: scale(0.96);
     }
 
     .hero__btn--primary {
       background: var(--color-accent);
       color: #fff;
-      box-shadow: 0 4px 14px rgba(233, 69, 96, 0.4);
     }
 
     .hero__btn--primary:hover {
       background: var(--color-accent-hover);
-      box-shadow: 0 6px 20px rgba(233, 69, 96, 0.5);
       color: #fff;
+      box-shadow: 0 4px 14px rgba(233, 69, 96, 0.4);
     }
 
     .hero__btn--secondary {
-      background: transparent;
-      color: var(--text-primary);
       border: 2px solid var(--surface-border);
+      color: var(--text-primary);
     }
 
     .hero__btn--secondary:hover {
@@ -150,7 +177,7 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
 
     .hero__social {
       display: flex;
-      gap: var(--space-3);
+      gap: var(--space-4);
     }
 
     .hero__social-link {
@@ -166,7 +193,7 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
 
     .hero__social-link:hover {
       background: var(--color-accent);
-      transform: translateY(-2px);
+      transform: translateY(-3px);
     }
 
     .hero__social-link:hover img {
@@ -176,15 +203,16 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
     .hero__visual {
       display: flex;
       justify-content: center;
+      align-items: center;
     }
 
     .hero__avatar-wrapper {
-      width: 350px;
-      height: 350px;
+      width: 300px;
+      height: 300px;
       border-radius: 50%;
       overflow: hidden;
-      border: 4px solid var(--color-accent);
-      box-shadow: 0 0 0 8px rgba(233, 69, 96, 0.1), var(--shadow-xl);
+      border: 4px solid var(--surface-border);
+      box-shadow: var(--shadow-xl);
     }
 
     .hero__avatar {
@@ -203,12 +231,18 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
     }
 
     @keyframes bounce {
-      0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-      40% { transform: translateX(-50%) translateY(-8px); }
-      60% { transform: translateX(-50%) translateY(-4px); }
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateX(-50%) translateY(0);
+      }
+      40% {
+        transform: translateX(-50%) translateY(-8px);
+      }
+      60% {
+        transform: translateX(-50%) translateY(-4px);
+      }
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 768px) {
       .hero__container {
         grid-template-columns: 1fr;
         text-align: center;
@@ -219,16 +253,24 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
         order: -1;
       }
 
-      .hero__tagline {
-        margin-inline: auto;
-      }
-
       .hero__actions {
         justify-content: center;
       }
 
       .hero__social {
         justify-content: center;
+      }
+
+      .hero__name {
+        font-size: var(--text-3xl);
+      }
+
+      .hero__title {
+        font-size: var(--text-xl);
+      }
+
+      .hero__tagline {
+        margin-inline: auto;
       }
 
       .hero__avatar-wrapper {

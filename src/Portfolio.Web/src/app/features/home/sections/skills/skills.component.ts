@@ -5,19 +5,21 @@ import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
 import { SectionHeaderComponent } from '../../../../shared/components/section-header/section-header.component';
 import { SkillBarComponent } from '../../../../shared/components/skill-bar/skill-bar.component';
 import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-on-scroll.directive';
+import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
+import { AssetUrlPipe } from '../../../../shared/pipes/asset-url.pipe';
 
 @Component({
   selector: 'app-skills',
   standalone: true,
-  imports: [SectionHeaderComponent, SkillBarComponent, AnimateOnScrollDirective],
+  imports: [SectionHeaderComponent, SkillBarComponent, AnimateOnScrollDirective, SkeletonComponent, AssetUrlPipe],
   template: `
     <section id="skills" class="skills section" aria-label="Skills">
       <div class="container">
         <app-section-header title="Skills" subtitle="Technologies and tools I work with" />
         @if (categories().length) {
-          <div class="skills__grid" appAnimateOnScroll>
+          <div class="skills__grid">
             @for (category of categories(); track category.id) {
-              <div class="skills__category" [style.transition-delay]="($index * 100) + 'ms'">
+              <div class="skills__category" appAnimateOnScroll [animationDelay]="($index * 100) + 'ms'">
                 <h3 class="skills__category-title">
                   @if (category.icon) {
                     <img [src]="category.icon" [alt]="category.name" class="skills__category-icon" />
@@ -32,6 +34,19 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
                       [icon]="skill.icon ?? undefined"
                       [visible]="visible()"
                     />
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (loading()) {
+          <div class="skills__grid">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="skills__category">
+                <app-skeleton variant="line" width="140px" height="24px" />
+                <div class="skills__skeleton-bars">
+                  @for (j of [1, 2, 3, 4]; track j) {
+                    <app-skeleton variant="bar" />
                   }
                 </div>
               </div>
@@ -73,6 +88,13 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
       object-fit: contain;
     }
 
+    .skills__skeleton-bars {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin-top: var(--space-6);
+    }
+
     @media (max-width: 480px) {
       .skills__grid {
         grid-template-columns: 1fr;
@@ -84,11 +106,12 @@ export class SkillsComponent implements OnInit {
   private readonly api = inject(ApiService);
   readonly categories = signal<SkillCategory[]>([]);
   readonly visible = signal(false);
+  readonly loading = signal(true);
 
   ngOnInit(): void {
     this.api.get<SkillCategory[]>(API_ENDPOINTS.SKILLS).then((data) => {
       this.categories.set(data);
       setTimeout(() => this.visible.set(true), 100);
-    });
+    }).finally(() => this.loading.set(false));
   }
 }

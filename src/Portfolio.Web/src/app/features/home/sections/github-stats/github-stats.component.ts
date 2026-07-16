@@ -5,11 +5,12 @@ import { GithubStats } from '../../../../core/models/github-stats.model';
 import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
 import { SectionHeaderComponent } from '../../../../shared/components/section-header/section-header.component';
 import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-on-scroll.directive';
+import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-github-stats',
   standalone: true,
-  imports: [CommonModule, SectionHeaderComponent, AnimateOnScrollDirective],
+  imports: [CommonModule, SectionHeaderComponent, AnimateOnScrollDirective, SkeletonComponent],
   template: `
     <section class="github section" aria-label="GitHub Activity">
       <div class="container">
@@ -39,7 +40,7 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
                 <h3 class="github__repos-title">Top Repositories</h3>
                 <div class="github__repos-grid">
                   @for (repo of stats()!.top_repositories; track repo.name) {
-                    <a [href]="repo.url" target="_blank" rel="noopener noreferrer" class="github__repo-card">
+                    <a [href]="repo.url" target="_blank" rel="noopener noreferrer" class="github__repo-card" appAnimateOnScroll [animationDelay]="($index * 100) + 'ms'">
                       <h4 class="github__repo-name">{{ repo.name }}</h4>
                       @if (repo.description) {
                         <p class="github__repo-desc">{{ repo.description }}</p>
@@ -88,6 +89,19 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
                 </a>
               </div>
             }
+          </div>
+        } @else if (loading()) {
+          <div class="github__content">
+            <div class="github__overview">
+              @for (i of [1, 2, 3, 4]; track i) {
+                <app-skeleton variant="card" height="80px" />
+              }
+            </div>
+            <div class="github__repos-grid">
+              @for (i of [1, 2, 3, 4]; track i) {
+                <app-skeleton variant="card" height="140px" />
+              }
+            </div>
           </div>
         }
       </div>
@@ -231,11 +245,12 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
 export class GithubStatsComponent implements OnInit {
   private readonly api = inject(ApiService);
   readonly stats = signal<GithubStats | null>(null);
+  readonly loading = signal(true);
 
   ngOnInit(): void {
     this.api.get<GithubStats>(API_ENDPOINTS.GITHUB_STATS).then((data) => {
       this.stats.set(data);
-    });
+    }).finally(() => this.loading.set(false));
   }
 
   getLanguageColor(language: string): string {

@@ -5,11 +5,12 @@ import { ApiService } from '../../core/services/api.service';
 import { ProjectDetail } from '../../core/models/project.model';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 import { SeoService } from '../../core/services/seo.service';
+import { AssetUrlPipe } from '../../shared/pipes/asset-url.pipe';
 
 @Component({
   selector: 'app-project-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AssetUrlPipe],
   template: `
     @if (loading()) {
       <div class="project-detail section">
@@ -29,7 +30,7 @@ import { SeoService } from '../../core/services/seo.service';
           </a>
 
           @if (project()!.image_url) {
-            <img [src]="project()!.image_url" [alt]="project()!.title" class="project-detail__image" />
+            <img [src]="project()!.image_url | assetUrl" [alt]="project()!.title" class="project-detail__image" (error)="$any($event.target).style.display='none'" />
           }
 
           <header class="project-detail__header">

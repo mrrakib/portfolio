@@ -10,6 +10,7 @@ export const routes: Routes = [
         path: '',
         loadComponent: () =>
           import('./features/home/home.component').then((m) => m.HomeComponent),
+        data: { animation: 'Home' },
       },
       {
         path: 'projects/:slug',
@@ -17,6 +18,7 @@ export const routes: Routes = [
           import('./features/project-detail/project-detail.component').then(
             (m) => m.ProjectDetailComponent
           ),
+        data: { animation: 'ProjectDetail' },
       },
     ],
   },
@@ -26,5 +28,6 @@ export const routes: Routes = [
       import('./features/not-found/not-found.component').then(
         (m) => m.NotFoundComponent
       ),
+    data: { animation: 'NotFound' },
   },
 ];

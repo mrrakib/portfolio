@@ -5,21 +5,23 @@ import { Certification } from '../../../../core/models/certification.model';
 import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
 import { SectionHeaderComponent } from '../../../../shared/components/section-header/section-header.component';
 import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-on-scroll.directive';
+import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
+import { AssetUrlPipe } from '../../../../shared/pipes/asset-url.pipe';
 
 @Component({
   selector: 'app-certifications',
   standalone: true,
-  imports: [CommonModule, SectionHeaderComponent, AnimateOnScrollDirective],
+  imports: [CommonModule, SectionHeaderComponent, AnimateOnScrollDirective, SkeletonComponent, AssetUrlPipe],
   template: `
     <section id="certifications" class="certifications section" aria-label="Certifications">
       <div class="container">
         <app-section-header title="Certifications" subtitle="Professional credentials and achievements" />
         @if (certifications().length) {
-          <div class="certifications__grid" appAnimateOnScroll>
+          <div class="certifications__grid">
             @for (cert of certifications(); track cert.id) {
-              <div class="certifications__card">
+              <div class="certifications__card" appAnimateOnScroll [animationDelay]="($index * 100) + 'ms'">
                 @if (cert.logo_url) {
-                  <img [src]="cert.logo_url" [alt]="cert.issuing_organization" class="certifications__logo" />
+                  <img [src]="cert.logo_url | assetUrl" [alt]="cert.issuing_organization" class="certifications__logo" (error)="$any($event.target).style.display='none'" />
                 }
                 <div class="certifications__info">
                   <h3 class="certifications__name">{{ cert.name }}</h3>
@@ -45,6 +47,12 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
                   </a>
                 }
               </div>
+            }
+          </div>
+        } @else if (loading()) {
+          <div class="certifications__grid">
+            @for (i of [1, 2, 3]; track i) {
+              <app-skeleton variant="card" height="120px" />
             }
           </div>
         }
@@ -139,11 +147,12 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
 export class CertificationsComponent implements OnInit {
   private readonly api = inject(ApiService);
   readonly certifications = signal<Certification[]>([]);
+  readonly loading = signal(true);
 
   ngOnInit(): void {
     this.api.get<Certification[]>(API_ENDPOINTS.CERTIFICATIONS).then((data) => {
       this.certifications.set(data);
-    });
+    }).finally(() => this.loading.set(false));
   }
 
   formatDate(dateStr: string): string {

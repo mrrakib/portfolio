@@ -6,19 +6,28 @@ import { API_ENDPOINTS } from '../../../../core/constants/api-endpoints';
 import { SectionHeaderComponent } from '../../../../shared/components/section-header/section-header.component';
 import { ProjectCardComponent } from '../../../../shared/components/project-card/project-card.component';
 import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-on-scroll.directive';
+import { SkeletonComponent } from '../../../../shared/components/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-projects',
   standalone: true,
-  imports: [CommonModule, SectionHeaderComponent, ProjectCardComponent, AnimateOnScrollDirective],
+  imports: [CommonModule, SectionHeaderComponent, ProjectCardComponent, AnimateOnScrollDirective, SkeletonComponent],
   template: `
     <section id="projects" class="projects section" aria-label="Projects">
       <div class="container">
         <app-section-header title="Projects" subtitle="Some of the things I've built" />
         @if (projects().length) {
-          <div class="projects__grid" appAnimateOnScroll>
+          <div class="projects__grid">
             @for (project of projects(); track project.id) {
-              <app-project-card [project]="project" />
+              <div appAnimateOnScroll [animationDelay]="($index * 100) + 'ms'">
+                <app-project-card [project]="project" />
+              </div>
+            }
+          </div>
+        } @else if (loading()) {
+          <div class="projects__grid">
+            @for (i of [1, 2, 3]; track i) {
+              <app-skeleton variant="card" height="360px" />
             }
           </div>
         }
@@ -42,10 +51,11 @@ import { AnimateOnScrollDirective } from '../../../../shared/directives/animate-
 export class ProjectsComponent implements OnInit {
   private readonly api = inject(ApiService);
   readonly projects = signal<Project[]>([]);
+  readonly loading = signal(true);
 
   ngOnInit(): void {
     this.api.get<Project[]>(API_ENDPOINTS.PROJECTS).then((data) => {
       this.projects.set(data);
-    });
+    }).finally(() => this.loading.set(false));
   }
 }

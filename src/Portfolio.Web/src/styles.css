@@ -272,6 +272,61 @@ code {
   transform: translateY(0);
 }
 
+/* ============================================
+   Micro-interactions
+   ============================================ */
+button,
+.hero__btn,
+.not-found__link {
+  transition: transform var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+button:active,
+.hero__btn:active,
+.not-found__link:active {
+  transform: scale(0.96);
+}
+
+/* Nav link underline animation */
+.header__link {
+  position: relative;
+}
+
+.header__link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-accent);
+  transition: width var(--transition-base);
+}
+
+.header__link:hover::after,
+.header__link.active::after {
+  width: 100%;
+}
+
+/* Contact success checkmark */
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.contact__success svg {
+  animation: checkmark 0.4s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -295,5 +350,10 @@ code {
   :root {
     --section-padding: 4rem;
     --header-height: 64px;
+  }
+
+  .animate-hidden {
+    transform: translateY(10px);
+    transition-duration: 0.4s;
   }
 }

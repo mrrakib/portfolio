@@ -2,16 +2,17 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Project } from '../../../core/models/project.model';
+import { AssetUrlPipe } from '../../pipes/asset-url.pipe';
 
 @Component({
   selector: 'app-project-card',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AssetUrlPipe],
   template: `
     <article class="project-card" [class.featured]="project.is_featured">
       <div class="project-card__image">
         @if (project.image_url) {
-          <img [src]="project.image_url" [alt]="project.title" loading="lazy" />
+          <img [src]="project.image_url | assetUrl" [alt]="project.title" loading="lazy" (error)="$any($event.target).style.display='none'" />
         } @else {
           <div class="project-card__placeholder">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

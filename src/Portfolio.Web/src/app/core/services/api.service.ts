@@ -1,11 +1,13 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
+import { LoadingService } from './loading.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http: AxiosInstance;
+  private readonly loading = inject(LoadingService);
 
   constructor() {
     this.http = axios.create({
@@ -17,9 +19,20 @@ export class ApiService {
       },
     });
 
+    this.http.interceptors.request.use(
+      (config) => {
+        this.loading.show();
+        return config;
+      }
+    );
+
     this.http.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        this.loading.hide();
+        return response;
+      },
       (error) => {
+        this.loading.hide();
         if (!error.response) {
           console.error('Network error:', error.message);
         }

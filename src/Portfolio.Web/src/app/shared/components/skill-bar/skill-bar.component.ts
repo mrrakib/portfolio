@@ -1,14 +1,16 @@
 import { Component, Input } from '@angular/core';
+import { AssetUrlPipe } from '../../pipes/asset-url.pipe';
 
 @Component({
   selector: 'app-skill-bar',
   standalone: true,
+  imports: [AssetUrlPipe],
   template: `
     <div class="skill-bar">
       <div class="skill-bar__header">
         <span class="skill-bar__name">
           @if (icon) {
-            <img [src]="icon" [alt]="name" class="skill-bar__icon" />
+            <img [src]="icon | assetUrl" [alt]="name" class="skill-bar__icon" (error)="icon = undefined" />
           }
           {{ name }}
         </span>
